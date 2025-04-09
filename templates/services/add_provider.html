@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}إضافة مقدم خدمة جديد{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">إضافة مقدم خدمة جديد</h1>
+        <a href="{{ url_for('services.providers') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-right"></i> العودة إلى قائمة مقدمي الخدمات
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">بيانات مقدم الخدمة</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('services.add_provider') }}">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">الاسم <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="specialization" class="form-label">التخصص <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="specialization" name="specialization" required>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label">رقم الهاتف <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="phone" name="phone" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                    <label class="form-check-label" for="is_active">مقدم الخدمة نشط</label>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="reset" class="btn btn-secondary me-md-2">إعادة تعيين</button>
+                    <button type="submit" class="btn btn-primary">حفظ مقدم الخدمة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

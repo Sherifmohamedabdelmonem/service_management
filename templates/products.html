@@ -1,0 +1,530 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة المنتجات - نظام إدارة الأعمال{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-actions .btn {
+        margin-right: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>إدارة المنتجات</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            <i class="bi bi-plus-lg"></i> إضافة منتج جديد
+        </button>
+    </div>
+    
+    <!-- بحث وتصفية -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" id="searchProduct" class="form-control" placeholder="ابحث عن منتج...">
+                        <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                            <i class="bi bi-search"></i> بحث
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">جميع الفئات</option>
+                        <!-- سيتم ملء هذه القائمة بالفئات المتاحة عبر JavaScript -->
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول المنتجات -->
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-box-seam"></i> قائمة المنتجات
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>الرمز</th>
+                            <th>الفئة</th>
+                            <th>سعر الشراء</th>
+                            <th>سعر البيع</th>
+                            <th>المخزون الحالي</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- سيتم ملء هذا الجدول بالبيانات عبر JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="productsPagination" class="d-flex justify-content-center mt-3">
+                <!-- سيتم إنشاء أزرار التنقل بين الصفحات هنا -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة منتج جديد -->
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProductModalLabel">إضافة منتج جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="productName" class="form-label">اسم المنتج</label>
+                            <input type="text" class="form-control" id="productName" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="productSKU" class="form-label">رمز المنتج (SKU)</label>
+                            <input type="text" class="form-control" id="productSKU" name="sku" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="productBarcode" class="form-label">الباركود (اختياري)</label>
+                            <input type="text" class="form-control" id="productBarcode" name="barcode">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="productCategory" class="form-label">الفئة</label>
+                            <input type="text" class="form-control" id="productCategory" name="category">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="productPurchasePrice" class="form-label">سعر الشراء</label>
+                            <input type="number" class="form-control" id="productPurchasePrice" name="purchase_price" step="0.01" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="productSellingPrice" class="form-label">سعر البيع</label>
+                            <input type="number" class="form-control" id="productSellingPrice" name="selling_price" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="productCurrentStock" class="form-label">المخزون الحالي</label>
+                            <input type="number" class="form-control" id="productCurrentStock" name="current_stock" value="0" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="productMinStockLevel" class="form-label">الحد الأدنى للمخزون</label>
+                            <input type="number" class="form-control" id="productMinStockLevel" name="min_stock_level" value="5" min="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productDescription" class="form-label">وصف المنتج</label>
+                        <textarea class="form-control" id="productDescription" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="saveProductBtn">حفظ المنتج</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تعديل منتج -->
+<div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProductModalLabel">تعديل منتج</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProductForm">
+                    <input type="hidden" id="editProductId" name="id">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editProductName" class="form-label">اسم المنتج</label>
+                            <input type="text" class="form-control" id="editProductName" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editProductSKU" class="form-label">رمز المنتج (SKU)</label>
+                            <input type="text" class="form-control" id="editProductSKU" name="sku" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editProductBarcode" class="form-label">الباركود (اختياري)</label>
+                            <input type="text" class="form-control" id="editProductBarcode" name="barcode">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editProductCategory" class="form-label">الفئة</label>
+                            <input type="text" class="form-control" id="editProductCategory" name="category">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editProductPurchasePrice" class="form-label">سعر الشراء</label>
+                            <input type="number" class="form-control" id="editProductPurchasePrice" name="purchase_price" step="0.01" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editProductSellingPrice" class="form-label">سعر البيع</label>
+                            <input type="number" class="form-control" id="editProductSellingPrice" name="selling_price" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editProductMinStockLevel" class="form-label">الحد الأدنى للمخزون</label>
+                            <input type="number" class="form-control" id="editProductMinStockLevel" name="min_stock_level" min="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editProductDescription" class="form-label">وصف المنتج</label>
+                        <textarea class="form-control" id="editProductDescription" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="updateProductBtn">تحديث المنتج</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تفاصيل المنتج -->
+<div class="modal fade" id="viewProductModal" tabindex="-1" aria-labelledby="viewProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewProductModalLabel">تفاصيل المنتج</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body" id="viewProductDetails">
+                <!-- سيتم ملء هذا القسم بتفاصيل المنتج عبر JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // سيتم إضافة كود JavaScript لإدارة المنتجات هنا
+    document.addEventListener('DOMContentLoaded', function() {
+        // جلب المنتجات عند تحميل الصفحة
+        fetchProducts();
+        
+        // حدث حفظ منتج جديد
+        document.getElementById('saveProductBtn').addEventListener('click', function() {
+            saveProduct();
+        });
+        
+        // حدث تحديث منتج
+        document.getElementById('updateProductBtn').addEventListener('click', function() {
+            updateProduct();
+        });
+        
+        // حدث البحث
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            fetchProducts();
+        });
+        
+        // حدث تغيير الفئة
+        document.getElementById('categoryFilter').addEventListener('change', function() {
+            fetchProducts();
+        });
+        
+        // جلب الفئات المتاحة
+        fetchCategories();
+    });
+    
+    // دالة جلب المنتجات
+    function fetchProducts() {
+        const searchTerm = document.getElementById('searchProduct').value;
+        const category = document.getElementById('categoryFilter').value;
+        
+        // هنا سيتم استدعاء API لجلب المنتجات
+        fetch('/api/products')
+            .then(response => response.json())
+            .then(data => {
+                displayProducts(data.products);
+            })
+            .catch(error => {
+                console.error('Error fetching products:', error);
+                alert('حدث خطأ أثناء جلب المنتجات');
+            });
+    }
+    
+    // دالة عرض المنتجات في الجدول
+    function displayProducts(products) {
+        const tableBody = document.querySelector('#productsTable tbody');
+        tableBody.innerHTML = '';
+        
+        if (products.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="8" class="text-center">لا توجد منتجات</td></tr>';
+            return;
+        }
+        
+        products.forEach(product => {
+            const row = document.createElement('tr');
+            
+            // تحديد حالة المخزون
+            let stockStatus = '';
+            if (product.current_stock === 0) {
+                stockStatus = '<span class="badge bg-danger">نفذ المخزون</span>';
+            } else if (product.current_stock <= product.min_stock_level) {
+                stockStatus = '<span class="badge bg-warning">منخفض</span>';
+            } else {
+                stockStatus = '<span class="badge bg-success">متوفر</span>';
+            }
+            
+            row.innerHTML = `
+                <td>${product.name}</td>
+                <td>${product.sku}</td>
+                <td>${product.category || '-'}</td>
+                <td>${product.purchase_price}</td>
+                <td>${product.selling_price}</td>
+                <td>${product.current_stock}</td>
+                <td>${stockStatus}</td>
+                <td class="product-actions">
+                    <button class="btn btn-sm btn-info" onclick="viewProduct(${product.id})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="editProduct(${product.id})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // دالة جلب الفئات
+    function fetchCategories() {
+        // هنا سيتم استدعاء API لجلب الفئات المتاحة
+        // يمكن استخراج الفئات من المنتجات المتاحة
+        fetch('/api/products')
+            .then(response => response.json())
+            .then(data => {
+                const categories = [...new Set(data.products.map(product => product.category).filter(Boolean))];
+                const categorySelect = document.getElementById('categoryFilter');
+                
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categorySelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching categories:', error);
+            });
+    }
+    
+    // دالة حفظ منتج جديد
+    function saveProduct() {
+        const form = document.getElementById('addProductForm');
+        const formData = new FormData(form);
+        const productData = {};
+        
+        formData.forEach((value, key) => {
+            productData[key] = value;
+        });
+        
+        // تحويل القيم الرقمية
+        productData.purchase_price = parseFloat(productData.purchase_price);
+        productData.selling_price = parseFloat(productData.selling_price);
+        productData.current_stock = parseInt(productData.current_stock);
+        productData.min_stock_level = parseInt(productData.min_stock_level);
+        
+        // هنا سيتم استدعاء API لإضافة منتج جديد
+        fetch('/api/products', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(productData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('فشل في إضافة المنتج');
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('تم إضافة المنتج بنجاح');
+            form.reset();
+            $('#addProductModal').modal('hide');
+            fetchProducts();
+        })
+        .catch(error => {
+            console.error('Error adding product:', error);
+            alert('حدث خطأ أثناء إضافة المنتج');
+        });
+    }
+    
+    // دالة عرض تفاصيل المنتج
+    function viewProduct(productId) {
+        // هنا سيتم استدعاء API لجلب تفاصيل المنتج
+        fetch(`/api/products/${productId}`)
+            .then(response => response.json())
+            .then(product => {
+                const detailsContainer = document.getElementById('viewProductDetails');
+                
+                detailsContainer.innerHTML = `
+                    <div class="mb-3">
+                        <h4>${product.name}</h4>
+                        <p class="text-muted">${product.sku}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>الوصف:</strong>
+                        <p>${product.description || 'لا يوجد وصف'}</p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>سعر الشراء:</strong>
+                            <p>${product.purchase_price}</p>
+                        </div>
+                        <div class="col-6">
+                            <strong>سعر البيع:</strong>
+                            <p>${product.selling_price}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>المخزون الحالي:</strong>
+                            <p>${product.current_stock}</p>
+                        </div>
+                        <div class="col-6">
+                            <strong>الحد الأدنى للمخزون:</strong>
+                            <p>${product.min_stock_level}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>الفئة:</strong>
+                            <p>${product.category || '-'}</p>
+                        </div>
+                        <div class="col-6">
+                            <strong>الباركود:</strong>
+                            <p>${product.barcode || '-'}</p>
+                        </div>
+                    </div>
+                `;
+                
+                $('#viewProductModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error fetching product details:', error);
+                alert('حدث خطأ أثناء جلب تفاصيل المنتج');
+            });
+    }
+    
+    // دالة تحميل بيانات المنتج للتعديل
+    function editProduct(productId) {
+        // هنا سيتم استدعاء API لجلب بيانات المنتج
+        fetch(`/api/products/${productId}`)
+            .then(response => response.json())
+            .then(product => {
+                document.getElementById('editProductId').value = product.id;
+                document.getElementById('editProductName').value = product.name;
+                document.getElementById('editProductSKU').value = product.sku;
+                document.getElementById('editProductBarcode').value = product.barcode || '';
+                document.getElementById('editProductCategory').value = product.category || '';
+                document.getElementById('editProductPurchasePrice').value = product.purchase_price;
+                document.getElementById('editProductSellingPrice').value = product.selling_price;
+                document.getElementById('editProductMinStockLevel').value = product.min_stock_level;
+                document.getElementById('editProductDescription').value = product.description || '';
+                
+                $('#editProductModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error fetching product for edit:', error);
+                alert('حدث خطأ أثناء جلب بيانات المنتج');
+            });
+    }
+    
+    // دالة تحديث المنتج
+    function updateProduct() {
+        const form = document.getElementById('editProductForm');
+        const formData = new FormData(form);
+        const productData = {};
+        const productId = document.getElementById('editProductId').value;
+        
+        formData.forEach((value, key) => {
+            if (key !== 'id') {
+                productData[key] = value;
+            }
+        });
+        
+        // تحويل القيم الرقمية
+        productData.purchase_price = parseFloat(productData.purchase_price);
+        productData.selling_price = parseFloat(productData.selling_price);
+        productData.min_stock_level = parseInt(productData.min_stock_level);
+        
+        // هنا سيتم استدعاء API لتحديث المنتج
+        fetch(`/api/products/${productId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(productData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('فشل في تحديث المنتج');
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('تم تحديث المنتج بنجاح');
+            $('#editProductModal').modal('hide');
+            fetchProducts();
+        })
+        .catch(error => {
+            console.error('Error updating product:', error);
+            alert('حدث خطأ أثناء تحديث المنتج');
+        });
+    }
+    
+    // دالة حذف المنتج
+    function deleteProduct(productId) {
+        if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+            // هنا سيتم استدعاء API لحذف المنتج
+            fetch(`/api/products/${productId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'فشل في حذف المنتج');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('تم حذف المنتج بنجاح');
+                fetchProducts();
+            })
+            .catch(error => {
+                console.error('Error deleting product:', error);
+                alert(error.message || 'حدث خطأ أثناء حذف المنتج');
+            });
+        }
+    }
+</script>
+{% endblock %}

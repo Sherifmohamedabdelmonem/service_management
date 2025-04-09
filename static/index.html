@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة الأعمال</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .landing-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .hero-section {
+            background-color: #0d6efd;
+            color: white;
+            padding: 4rem 2rem;
+            border-radius: 10px;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+        .feature-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #0d6efd;
+        }
+        .cta-section {
+            background-color: #f1f8ff;
+            padding: 3rem;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-container">
+        <div class="hero-section">
+            <h1 class="display-4 mb-4">نظام إدارة الأعمال الشامل</h1>
+            <p class="lead mb-4">حل متكامل لإدارة المصروفات، الإيرادات، المبيعات، المخزون، ومعلومات العملاء</p>
+            <a href="/auth/login" class="btn btn-light btn-lg">تسجيل الدخول</a>
+            <a href="/auth/register" class="btn btn-outline-light btn-lg ms-2">إنشاء حساب</a>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+                    <h3>إدارة المصروفات والإيرادات</h3>
+                    <p>تسجيل وتصنيف المصروفات، تتبع مصادر الدخل، وتحليل الأداء المالي لمشروعك.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-cart-check"></i>
+                    </div>
+                    <h3>إدارة المبيعات</h3>
+                    <p>إنشاء فواتير المبيعات، تسجيل المدفوعات، وتتبع حالة الدفع بكل سهولة.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <h3>إدارة المخزون</h3>
+                    <p>تتبع المنتجات، مراقبة حركة المخزون، والحصول على تنبيهات عند انخفاض المخزون.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h3>إدارة العملاء</h3>
+                    <p>تخزين معلومات العملاء، تتبع مشترياتهم، وبناء علاقات أقوى مع عملائك.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h3>تقارير وتحليلات</h3>
+                    <p>تقارير شاملة للمبيعات والمخزون مع رسوم بيانية وخيارات تصدير متعددة.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <h3>نظام أمان متكامل</h3>
+                    <p>إدارة المستخدمين والصلاحيات لضمان أمان بيانات مشروعك.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2 class="mb-4">ابدأ في إدارة مشروعك بكفاءة اليوم</h2>
+            <p class="lead mb-4">نظام إدارة الأعمال الشامل يساعدك على اتخاذ قرارات تجارية أفضل بناءً على بيانات دقيقة.</p>
+            <a href="/auth/register" class="btn btn-primary btn-lg">سجل الآن مجاناً</a>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-4 mt-5">
+        <p>جميع الحقوق محفوظة &copy; 2025 - نظام إدارة الأعمال</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

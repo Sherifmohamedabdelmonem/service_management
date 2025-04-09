@@ -1,0 +1,855 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة المصروفات - نظام إدارة الأعمال{% endblock %}
+
+{% block extra_css %}
+<style>
+    .expense-actions .btn {
+        margin-right: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>إدارة المصروفات</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+            <i class="bi bi-plus-lg"></i> إضافة مصروف جديد
+        </button>
+    </div>
+    
+    <!-- بحث وتصفية -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" id="searchExpense" class="form-control" placeholder="ابحث عن مصروف...">
+                        <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                            <i class="bi bi-search"></i> بحث
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">جميع الفئات</option>
+                        <!-- سيتم ملء هذه القائمة بالفئات المتاحة عبر JavaScript -->
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input type="date" id="startDate" class="form-control" placeholder="من تاريخ">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="date" id="endDate" class="form-control" placeholder="إلى تاريخ">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول المصروفات -->
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-cash-coin"></i> قائمة المصروفات
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="expensesTable">
+                    <thead>
+                        <tr>
+                            <th>العنوان</th>
+                            <th>الفئة</th>
+                            <th>المبلغ</th>
+                            <th>التاريخ</th>
+                            <th>طريقة الدفع</th>
+                            <th>المرجع</th>
+                            <th>المستخدم</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- سيتم ملء هذا الجدول بالبيانات عبر JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="expensesPagination" class="d-flex justify-content-center mt-3">
+                <!-- سيتم إنشاء أزرار التنقل بين الصفحات هنا -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- ملخص المصروفات -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-graph-up"></i> ملخص المصروفات حسب الفئة
+                </div>
+                <div class="card-body">
+                    <canvas id="expensesByCategoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-calendar3"></i> المصروفات الشهرية
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyExpensesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة مصروف جديد -->
+<div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addExpenseModalLabel">إضافة مصروف جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addExpenseForm">
+                    <div class="mb-3">
+                        <label for="expenseTitle" class="form-label">عنوان المصروف</label>
+                        <input type="text" class="form-control" id="expenseTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="expenseCategory" class="form-label">الفئة</label>
+                        <select class="form-select" id="expenseCategory" name="category" required>
+                            <option value="">اختر فئة</option>
+                            <!-- سيتم ملء هذه القائمة بالفئات المتاحة عبر JavaScript -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="expenseAmount" class="form-label">المبلغ</label>
+                        <input type="number" class="form-control" id="expenseAmount" name="amount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="expenseDate" class="form-label">التاريخ</label>
+                        <input type="date" class="form-control" id="expenseDate" name="expense_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="expensePaymentMethod" class="form-label">طريقة الدفع</label>
+                        <select class="form-select" id="expensePaymentMethod" name="payment_method">
+                            <option value="cash">نقدًا</option>
+                            <option value="card">بطاقة ائتمان</option>
+                            <option value="transfer">تحويل بنكي</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="expenseReference" class="form-label">المرجع (اختياري)</label>
+                        <input type="text" class="form-control" id="expenseReference" name="reference">
+                    </div>
+                    <div class="mb-3">
+                        <label for="expenseNotes" class="form-label">ملاحظات (اختياري)</label>
+                        <textarea class="form-control" id="expenseNotes" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="saveExpenseBtn">حفظ المصروف</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تعديل مصروف -->
+<div class="modal fade" id="editExpenseModal" tabindex="-1" aria-labelledby="editExpenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editExpenseModalLabel">تعديل مصروف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editExpenseForm">
+                    <input type="hidden" id="editExpenseId" name="id">
+                    <div class="mb-3">
+                        <label for="editExpenseTitle" class="form-label">عنوان المصروف</label>
+                        <input type="text" class="form-control" id="editExpenseTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editExpenseCategory" class="form-label">الفئة</label>
+                        <select class="form-select" id="editExpenseCategory" name="category" required>
+                            <option value="">اختر فئة</option>
+                            <!-- سيتم ملء هذه القائمة بالفئات المتاحة عبر JavaScript -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editExpenseAmount" class="form-label">المبلغ</label>
+                        <input type="number" class="form-control" id="editExpenseAmount" name="amount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editExpenseDate" class="form-label">التاريخ</label>
+                        <input type="date" class="form-control" id="editExpenseDate" name="expense_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editExpensePaymentMethod" class="form-label">طريقة الدفع</label>
+                        <select class="form-select" id="editExpensePaymentMethod" name="payment_method">
+                            <option value="cash">نقدًا</option>
+                            <option value="card">بطاقة ائتمان</option>
+                            <option value="transfer">تحويل بنكي</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editExpenseReference" class="form-label">المرجع (اختياري)</label>
+                        <input type="text" class="form-control" id="editExpenseReference" name="reference">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editExpenseNotes" class="form-label">ملاحظات (اختياري)</label>
+                        <textarea class="form-control" id="editExpenseNotes" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="updateExpenseBtn">تحديث المصروف</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تفاصيل المصروف -->
+<div class="modal fade" id="viewExpenseModal" tabindex="-1" aria-labelledby="viewExpenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewExpenseModalLabel">تفاصيل المصروف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body" id="viewExpenseDetails">
+                <!-- سيتم ملء هذا القسم بتفاصيل المصروف عبر JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إدارة فئات المصروفات -->
+<div class="modal fade" id="manageCategoriesModal" tabindex="-1" aria-labelledby="manageCategoriesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manageCategoriesModalLabel">إدارة فئات المصروفات</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" id="newCategoryName" class="form-control" placeholder="اسم الفئة الجديدة">
+                        <button class="btn btn-success" type="button" id="addCategoryBtn">
+                            <i class="bi bi-plus-lg"></i> إضافة
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="categoriesTable">
+                        <thead>
+                            <tr>
+                                <th>اسم الفئة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- سيتم ملء هذا الجدول بالفئات المتاحة عبر JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // سيتم إضافة كود JavaScript لإدارة المصروفات هنا
+    document.addEventListener('DOMContentLoaded', function() {
+        // تعيين التاريخ الحالي
+        document.getElementById('expenseDate').value = new Date().toISOString().slice(0, 10);
+        
+        // جلب المصروفات عند تحميل الصفحة
+        fetchExpenses();
+        
+        // جلب فئات المصروفات
+        fetchCategories();
+        
+        // حدث حفظ مصروف جديد
+        document.getElementById('saveExpenseBtn').addEventListener('click', function() {
+            saveExpense();
+        });
+        
+        // حدث تحديث مصروف
+        document.getElementById('updateExpenseBtn').addEventListener('click', function() {
+            updateExpense();
+        });
+        
+        // حدث البحث
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            fetchExpenses();
+        });
+        
+        // حدث تغيير الفئة
+        document.getElementById('categoryFilter').addEventListener('change', function() {
+            fetchExpenses();
+        });
+        
+        // حدث تغيير التاريخ
+        document.getElementById('startDate').addEventListener('change', function() {
+            fetchExpenses();
+        });
+        document.getElementById('endDate').addEventListener('change', function() {
+            fetchExpenses();
+        });
+        
+        // إضافة زر إدارة الفئات إلى الصفحة
+        const headerActions = document.querySelector('.d-flex.justify-content-between.align-items-center.mb-4');
+        const manageCategoriesBtn = document.createElement('button');
+        manageCategoriesBtn.className = 'btn btn-outline-primary ms-2';
+        manageCategoriesBtn.innerHTML = '<i class="bi bi-tags"></i> إدارة الفئات';
+        manageCategoriesBtn.addEventListener('click', function() {
+            $('#manageCategoriesModal').modal('show');
+            fetchCategoriesForManagement();
+        });
+        
+        // إضافة زر إدارة الفئات بعد زر إضافة مصروف
+        headerActions.querySelector('button').after(manageCategoriesBtn);
+        
+        // حدث إضافة فئة جديدة
+        document.getElementById('addCategoryBtn').addEventListener('click', function() {
+            addCategory();
+        });
+    });
+    
+    // دالة جلب المصروفات
+    function fetchExpenses() {
+        const searchTerm = document.getElementById('searchExpense').value;
+        const category = document.getElementById('categoryFilter').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        // هنا سيتم استدعاء API لجلب المصروفات
+        fetch('/api/expenses')
+            .then(response => response.json())
+            .then(data => {
+                displayExpenses(data.expenses);
+                updateExpenseCharts(data.expenses);
+            })
+            .catch(error => {
+                console.error('Error fetching expenses:', error);
+                alert('حدث خطأ أثناء جلب المصروفات');
+            });
+    }
+    
+    // دالة عرض المصروفات في الجدول
+    function displayExpenses(expenses) {
+        const tableBody = document.querySelector('#expensesTable tbody');
+        tableBody.innerHTML = '';
+        
+        if (expenses.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="8" class="text-center">لا توجد مصروفات</td></tr>';
+            return;
+        }
+        
+        expenses.forEach(expense => {
+            const row = document.createElement('tr');
+            
+            // تحديد طريقة الدفع
+            let paymentMethodText = '';
+            
+            if (expense.payment_method === 'cash') {
+                paymentMethodText = 'نقدًا';
+            } else if (expense.payment_method === 'card') {
+                paymentMethodText = 'بطاقة ائتمان';
+            } else if (expense.payment_method === 'transfer') {
+                paymentMethodText = 'تحويل بنكي';
+            }
+            
+            // تنسيق التاريخ
+            const expenseDate = new Date(expense.expense_date);
+            const formattedDate = expenseDate.toLocaleDateString('ar-EG');
+            
+            row.innerHTML = `
+                <td>${expense.title}</td>
+                <td>${expense.category}</td>
+                <td>${expense.amount.toFixed(2)}</td>
+                <td>${formattedDate}</td>
+                <td>${paymentMethodText}</td>
+                <td>${expense.reference || '-'}</td>
+                <td>${expense.user_name}</td>
+                <td class="expense-actions">
+                    <button class="btn btn-sm btn-info" onclick="viewExpense(${expense.id})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="editExpense(${expense.id})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteExpense(${expense.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // دالة جلب فئات المصروفات
+    function fetchCategories() {
+        // هنا سيتم استدعاء API لجلب فئات المصروفات
+        fetch('/api/expense-categories')
+            .then(response => response.json())
+            .then(data => {
+                const categories = data.categories;
+                
+                // تحديث قائمة الفئات في نموذج إضافة مصروف
+                const categorySelect = document.getElementById('expenseCategory');
+                const editCategorySelect = document.getElementById('editExpenseCategory');
+                const categoryFilter = document.getElementById('categoryFilter');
+                
+                // حذف جميع الخيارات باستثناء الخيار الافتراضي
+                while (categorySelect.options.length > 1) {
+                    categorySelect.remove(1);
+                }
+                
+                while (editCategorySelect.options.length > 1) {
+                    editCategorySelect.remove(1);
+                }
+                
+                while (categoryFilter.options.length > 1) {
+                    categoryFilter.remove(1);
+                }
+                
+                // إضافة الفئات
+                categories.forEach(category => {
+                    const option1 = document.createElement('option');
+                    option1.value = category.name;
+                    option1.textContent = category.name;
+                    categorySelect.appendChild(option1);
+                    
+                    const option2 = document.createElement('option');
+                    option2.value = category.name;
+                    option2.textContent = category.name;
+                    editCategorySelect.appendChild(option2);
+                    
+                    const option3 = document.createElement('option');
+                    option3.value = category.name;
+                    option3.textContent = category.name;
+                    categoryFilter.appendChild(option3);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching categories:', error);
+            });
+    }
+    
+    // دالة جلب فئات المصروفات لإدارتها
+    function fetchCategoriesForManagement() {
+        fetch('/api/expense-categories')
+            .then(response => response.json())
+            .then(data => {
+                const categories = data.categories;
+                const tableBody = document.querySelector('#categoriesTable tbody');
+                tableBody.innerHTML = '';
+                
+                if (categories.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="2" class="text-center">لا توجد فئات</td></tr>';
+                    return;
+                }
+                
+                categories.forEach(category => {
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${category.name}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCategory(${category.id})">
+                                <i class="bi bi-trash"></i> حذف
+                            </button>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching categories for management:', error);
+                alert('حدث خطأ أثناء جلب فئات المصروفات');
+            });
+    }
+    
+    // دالة إضافة فئة جديدة
+    function addCategory() {
+        const categoryName = document.getElementById('newCategoryName').value.trim();
+        
+        if (!categoryName) {
+            alert('يرجى إدخال اسم الفئة');
+            return;
+        }
+        
+        const categoryData = {
+            name: categoryName
+        };
+        
+        fetch('/api/expense-categories', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(categoryData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'فشل في إضافة الفئة');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('تم إضافة الفئة بنجاح');
+            document.getElementById('newCategoryName').value = '';
+            fetchCategoriesForManagement();
+            fetchCategories();
+        })
+        .catch(error => {
+            console.error('Error adding category:', error);
+            alert(error.message || 'حدث خطأ أثناء إضافة الفئة');
+        });
+    }
+    
+    // دالة حذف فئة
+    function deleteCategory(categoryId) {
+        if (confirm('هل أنت متأكد من حذف هذه الفئة؟')) {
+            fetch(`/api/expense-categories/${categoryId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'فشل في حذف الفئة');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('تم حذف الفئة بنجاح');
+                fetchCategoriesForManagement();
+                fetchCategories();
+            })
+            .catch(error => {
+                console.error('Error deleting category:', error);
+                alert(error.message || 'حدث خطأ أثناء حذف الفئة');
+            });
+        }
+    }
+    
+    // دالة حفظ مصروف جديد
+    function saveExpense() {
+        const form = document.getElementById('addExpenseForm');
+        const formData = new FormData(form);
+        const expenseData = {};
+        
+        formData.forEach((value, key) => {
+            expenseData[key] = value;
+        });
+        
+        // تحويل القيم الرقمية
+        expenseData.amount = parseFloat(expenseData.amount);
+        
+        // هنا سيتم استدعاء API لإضافة مصروف جديد
+        fetch('/api/expenses', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(expenseData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'فشل في إضافة المصروف');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('تم إضافة المصروف بنجاح');
+            form.reset();
+            document.getElementById('expenseDate').value = new Date().toISOString().slice(0, 10);
+            $('#addExpenseModal').modal('hide');
+            fetchExpenses();
+        })
+        .catch(error => {
+            console.error('Error adding expense:', error);
+            alert(error.message || 'حدث خطأ أثناء إضافة المصروف');
+        });
+    }
+    
+    // دالة عرض تفاصيل المصروف
+    function viewExpense(expenseId) {
+        fetch(`/api/expenses/${expenseId}`)
+            .then(response => response.json())
+            .then(expense => {
+                const detailsContainer = document.getElementById('viewExpenseDetails');
+                
+                // تحديد طريقة الدفع
+                let paymentMethodText = '';
+                
+                if (expense.payment_method === 'cash') {
+                    paymentMethodText = 'نقدًا';
+                } else if (expense.payment_method === 'card') {
+                    paymentMethodText = 'بطاقة ائتمان';
+                } else if (expense.payment_method === 'transfer') {
+                    paymentMethodText = 'تحويل بنكي';
+                }
+                
+                // تنسيق التاريخ
+                const expenseDate = new Date(expense.expense_date);
+                const formattedDate = expenseDate.toLocaleDateString('ar-EG');
+                
+                detailsContainer.innerHTML = `
+                    <div class="mb-3">
+                        <h4>${expense.title}</h4>
+                        <p class="text-muted">${expense.category}</p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>المبلغ:</strong>
+                            <p>${expense.amount.toFixed(2)}</p>
+                        </div>
+                        <div class="col-6">
+                            <strong>التاريخ:</strong>
+                            <p>${formattedDate}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>طريقة الدفع:</strong>
+                            <p>${paymentMethodText}</p>
+                        </div>
+                        <div class="col-6">
+                            <strong>المرجع:</strong>
+                            <p>${expense.reference || '-'}</p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>المستخدم:</strong>
+                        <p>${expense.user_name}</p>
+                    </div>
+                    ${expense.notes ? `
+                    <div class="mb-3">
+                        <strong>ملاحظات:</strong>
+                        <p>${expense.notes}</p>
+                    </div>
+                    ` : ''}
+                `;
+                
+                $('#viewExpenseModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error fetching expense details:', error);
+                alert('حدث خطأ أثناء جلب تفاصيل المصروف');
+            });
+    }
+    
+    // دالة تحميل بيانات المصروف للتعديل
+    function editExpense(expenseId) {
+        fetch(`/api/expenses/${expenseId}`)
+            .then(response => response.json())
+            .then(expense => {
+                document.getElementById('editExpenseId').value = expense.id;
+                document.getElementById('editExpenseTitle').value = expense.title;
+                document.getElementById('editExpenseCategory').value = expense.category;
+                document.getElementById('editExpenseAmount').value = expense.amount;
+                
+                // تنسيق التاريخ للحقل
+                const expenseDate = new Date(expense.expense_date);
+                const formattedDate = expenseDate.toISOString().slice(0, 10);
+                document.getElementById('editExpenseDate').value = formattedDate;
+                
+                document.getElementById('editExpensePaymentMethod').value = expense.payment_method;
+                document.getElementById('editExpenseReference').value = expense.reference || '';
+                document.getElementById('editExpenseNotes').value = expense.notes || '';
+                
+                $('#editExpenseModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error fetching expense for edit:', error);
+                alert('حدث خطأ أثناء جلب بيانات المصروف');
+            });
+    }
+    
+    // دالة تحديث المصروف
+    function updateExpense() {
+        const form = document.getElementById('editExpenseForm');
+        const formData = new FormData(form);
+        const expenseData = {};
+        const expenseId = document.getElementById('editExpenseId').value;
+        
+        formData.forEach((value, key) => {
+            if (key !== 'id') {
+                expenseData[key] = value;
+            }
+        });
+        
+        // تحويل القيم الرقمية
+        expenseData.amount = parseFloat(expenseData.amount);
+        
+        // هنا سيتم استدعاء API لتحديث المصروف
+        fetch(`/api/expenses/${expenseId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(expenseData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'فشل في تحديث المصروف');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('تم تحديث المصروف بنجاح');
+            $('#editExpenseModal').modal('hide');
+            fetchExpenses();
+        })
+        .catch(error => {
+            console.error('Error updating expense:', error);
+            alert(error.message || 'حدث خطأ أثناء تحديث المصروف');
+        });
+    }
+    
+    // دالة حذف المصروف
+    function deleteExpense(expenseId) {
+        if (confirm('هل أنت متأكد من حذف هذا المصروف؟')) {
+            // هنا سيتم استدعاء API لحذف المصروف
+            fetch(`/api/expenses/${expenseId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'فشل في حذف المصروف');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('تم حذف المصروف بنجاح');
+                fetchExpenses();
+            })
+            .catch(error => {
+                console.error('Error deleting expense:', error);
+                alert(error.message || 'حدث خطأ أثناء حذف المصروف');
+            });
+        }
+    }
+    
+    // دالة تحديث الرسوم البيانية للمصروفات
+    function updateExpenseCharts(expenses) {
+        // تجميع البيانات حسب الفئة
+        const categoriesData = {};
+        expenses.forEach(expense => {
+            const category = expense.category || 'أخرى';
+            if (!categoriesData[category]) {
+                categoriesData[category] = 0;
+            }
+            categoriesData[category] += expense.amount;
+        });
+        
+        // تجميع البيانات حسب الشهر
+        const monthlyData = {};
+        const months = ['يناير', 'فبراير', 'مارس', 'إبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+        
+        expenses.forEach(expense => {
+            const date = new Date(expense.expense_date);
+            const monthYear = `${months[date.getMonth()]} ${date.getFullYear()}`;
+            
+            if (!monthlyData[monthYear]) {
+                monthlyData[monthYear] = 0;
+            }
+            monthlyData[monthYear] += expense.amount;
+        });
+        
+        // إنشاء الرسم البياني للفئات
+        const categoryCtx = document.getElementById('expensesByCategoryChart').getContext('2d');
+        if (window.categoryChart) {
+            window.categoryChart.destroy();
+        }
+        
+        window.categoryChart = new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(categoriesData),
+                datasets: [{
+                    data: Object.values(categoriesData),
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+                        '#8AC249', '#EA526F', '#23B5D3', '#279AF1', '#7E77F9', '#F7C59F'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        
+        // إنشاء الرسم البياني الشهري
+        const monthlyCtx = document.getElementById('monthlyExpensesChart').getContext('2d');
+        if (window.monthlyChart) {
+            window.monthlyChart.destroy();
+        }
+        
+        // ترتيب البيانات الشهرية
+        const sortedMonths = Object.keys(monthlyData).sort((a, b) => {
+            const aDate = new Date(a.split(' ')[1], months.indexOf(a.split(' ')[0]));
+            const bDate = new Date(b.split(' ')[1], months.indexOf(b.split(' ')[0]));
+            return aDate - bDate;
+        });
+        
+        window.monthlyChart = new Chart(monthlyCtx, {
+            type: 'bar',
+            data: {
+                labels: sortedMonths,
+                datasets: [{
+                    label: 'المصروفات الشهرية',
+                    data: sortedMonths.map(month => monthlyData[month]),
+                    backgroundColor: '#36A2EB'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم - نظام إدارة الأعمال{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">لوحة التحكم</h2>
+    
+    <!-- إحصائيات سريعة -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">إجمالي المبيعات</h6>
+                            <h3 class="mb-0">{{ total_sales }}</h3>
+                        </div>
+                        <i class="bi bi-cart-check fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">إجمالي المنتجات</h6>
+                            <h3 class="mb-0">{{ total_products }}</h3>
+                        </div>
+                        <i class="bi bi-box-seam fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">إجمالي العملاء</h6>
+                            <h3 class="mb-0">{{ total_customers }}</h3>
+                        </div>
+                        <i class="bi bi-people fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">إجمالي المصروفات</h6>
+                            <h3 class="mb-0">{{ total_expenses }}</h3>
+                        </div>
+                        <i class="bi bi-cash-coin fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ملخص مالي للشهر الحالي -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-graph-up"></i> ملخص مالي للشهر الحالي
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <h5>المبيعات</h5>
+                                <h3 class="text-success">{{ monthly_sales }} ج.م</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <h5>المصروفات</h5>
+                                <h3 class="text-danger">{{ monthly_expenses }} ج.م</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h5 class="text-center">صافي الربح</h5>
+                        <h3 class="text-center {{ 'text-success' if monthly_sales > monthly_expenses else 'text-danger' }}">
+                            {{ monthly_sales - monthly_expenses }} ج.م
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- المنتجات منخفضة المخزون -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-exclamation-triangle"></i> منتجات منخفضة المخزون
+                </div>
+                <div class="card-body">
+                    {% if low_stock_products %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>المنتج</th>
+                                    <th>المخزون الحالي</th>
+                                    <th>الحد الأدنى</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in low_stock_products %}
+                                <tr>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.current_stock }}</td>
+                                    <td>{{ product.min_stock_level }}</td>
+                                    <td>
+                                        {% if product.current_stock == 0 %}
+                                        <span class="badge bg-danger">نفذ المخزون</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">منخفض</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">لا توجد منتجات منخفضة المخزون</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- آخر المبيعات -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-receipt"></i> آخر المبيعات
+                </div>
+                <div class="card-body">
+                    {% if recent_sales %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>رقم الفاتورة</th>
+                                    <th>العميل</th>
+                                    <th>التاريخ</th>
+                                    <th>المبلغ</th>
+                                    <th>حالة الدفع</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in recent_sales %}
+                                <tr>
+                                    <td>{{ sale.invoice_number }}</td>
+                                    <td>{{ sale.customer.name if sale.customer else 'عميل غير مسجل' }}</td>
+                                    <td>{{ sale.sale_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>{{ sale.final_amount }} ج.م</td>
+                                    <td>
+                                        {% if sale.payment_status == 'paid' %}
+                                        <span class="badge bg-success">مدفوع</span>
+                                        {% elif sale.payment_status == 'partial' %}
+                                        <span class="badge bg-warning">مدفوع جزئيًا</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">غير مدفوع</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">لا توجد مبيعات حديثة</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // يمكن إضافة رسوم بيانية هنا باستخدام Chart.js
+</script>
+{% endblock %}

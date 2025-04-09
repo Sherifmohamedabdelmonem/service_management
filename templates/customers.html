@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة العملاء - نظام إدارة الأعمال{% endblock %}
+
+{% block extra_css %}
+<style>
+    .customer-actions .btn {
+        margin-right: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>إدارة العملاء</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+            <i class="bi bi-plus-lg"></i> إضافة عميل جديد
+        </button>
+    </div>
+    
+    <!-- بحث وتصفية -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" id="searchCustomer" class="form-control" placeholder="ابحث عن عميل بالاسم أو رقم الهاتف أو البريد الإلكتروني...">
+                        <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                            <i class="bi bi-search"></i> بحث
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="sortCustomers" class="form-select">
+                        <option value="name">ترتيب حسب الاسم</option>
+                        <option value="created_at">ترتيب حسب تاريخ الإضافة</option>
+                        <option value="sales_count">ترتيب حسب عدد المبيعات</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول العملاء -->
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-people"></i> قائمة العملاء
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="customersTable">
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>رقم الهاتف</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>العنوان</th>
+                            <th>تاريخ الإضافة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- سيتم ملء هذا الجدول بالبيانات عبر JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="customersPagination" class="d-flex justify-content-center mt-3">
+                <!-- سيتم إنشاء أزرار التنقل بين الصفحات هنا -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- إحصائيات العملاء -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-graph-up"></i> أفضل العملاء
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="topCustomersTable">
+                            <thead>
+                                <tr>
+                                    <th>العميل</th>
+                                    <th>عدد المبيعات</th>
+                                    <th>إجمالي المشتريات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- سيتم ملء هذا الجدول بالبيانات عبر JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-calendar3"></i> إحصائيات العملاء
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h5 id="totalCustomers">0</h5>
+                            <p>إجمالي العملاء</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 id="newCustomersMonth">0</h5>
+                            <p>عملاء جدد هذا الشهر</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 id="activeCustomers">0</h5>
+                            <p>عملاء نشطين</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة عميل جديد -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCustomerModalLabel">إضافة عميل جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCustomerForm">
+                    <div class="mb-3">
+                        <label for="customerName" class="form-label">اسم العميل</label>
+                        <input type="text" class="form-control" id="customerName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerPhone" class="form-label">رقم الهاتف</label>
+                        <input type="text" class="form-control" id="customerPhone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerEmail" class="form-label">البريد الإلكتروني (اختياري)</label>
+                        <input type="email" class="form-control" id="customerEmail" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerAddress" class="form-label">العنوان (اختياري)</label>
+                        <textarea class="form-control" id="customerAddress" name="address" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="saveCustomerBtn">حفظ العميل</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تعديل عميل -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCustomerModalLabel">تعديل بيانات العميل</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCustomerForm">
+                    <input type="hidden" id="editCustomerId" name="id">
+                    <div class="mb-3">
+                        <label for="editCustomerName" class="form-label">اسم العميل</label>
+                        <input type="text" class="form-control" id="editCustomerName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCustomerPhone" class="form-label">رقم الهاتف</label>
+                        <input type="text" class="form-control" id="editCustomerPhone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCustomerEmail" class="form-label">البريد الإلكتروني (اختياري)</label>
+                        <input type="email" class="form-control" id="editCustomerEmail" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCustomerAddress" class="form-label">العنوان (اختياري)</label>
+                        <textarea class="form-control" id="editCustomerAddress" name="address" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="updateCustomerBtn">تحديث بيانات العميل</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal عرض تفاصيل العميل -->
+<div class="modal fade" id="viewCustomerModal" tabindex="-1" aria-labelledby="viewCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewCustomerModalLabel">تفاصيل العميل</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6" id="customerDetails">
+                        <!-- سيتم ملء هذا القسم بتفاصيل العميل عبر JavaScript -->
+                    </div>
+                    <div class="col-md-6" id="customerStats">
+                        <!-- سيتم ملء هذا القسم بإحصائيات العميل عبر JavaScript -->
+                    </div>
+                </div>
+                
+                <h5 class="mt-4">آخر المبيعات</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="customerSalesTable">
+                        <thead>
+                            <tr>
+                                <th>رقم الفاتورة</th>
+                                <th>التاريخ</th>
+                                <th>المبلغ</th>
+                                <th>حالة الدفع</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- سيتم ملء هذا الجدول بالبيانات عبر JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary" id="addSaleForCustomerBtn">إضافة عملية بيع</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // سيتم إضافة كود JavaScript لإدارة العملاء هنا
+    document.addEventListener('DOMContentLoaded', function() {
+        // جلب العملاء عند تحميل الصفحة
+        fetchCustomers();
+        
+        // جلب إحصائيات العملاء
+        fetchCustomerStats();
+        
+        // حدث حفظ عميل جديد
+        document.getElementById('saveCustomerBtn').addEventListener('click', function() {
+            saveCustomer();
+        });
+        
+        // حدث تحديث بيانات العميل
+        document.getElementById('updateCustomerBtn').addEventListener('click', function() {
+            updateCustomer();
+        });
+        
+        // حدث البحث
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            fetchCustomers();
+        });
+        
+        // حدث تغيير الترتيب
+        document.getElementById('sortCustomers').addEventListener('change', function() {
+            fetchCustomers();
+        });
+        
+        // حدث إضافة عملية بيع للعميل
+        document.getElementById('addSaleForCustomerBtn').addEventListener('click', function() {
+            const customerId = document.getElementById('viewCustomerModal').dataset.customerId;
+            $('#viewCustomerModal').modal('hide');
+            $('#addSaleModal').modal('show');
+            document.getElementById('saleCustomer').value = customerId;
+        });
+    });
+    
+    // دالة جلب العملاء
+    function fetchCustomers() {
+        const searchTerm = document.getElementById('searchCustomer').value;
+        const sortBy = document.getElementById('sortCustomers').value;
+        
+        // هنا سيتم استدعاء API لجلب العملاء
+        fetch('/api/customers')
+            .then(response => response.json())
+            .then(data => {
+                displayCustomers(data.customers);
+            })
+            .catch(error => {
+                console.error('Error fetching customers:', error);
+                alert('حدث خطأ أثناء جلب بيانات العملاء');
+            });
+    }
+    
+    // دالة عرض العملاء في الجدول
+    function displayCustomers(customers) {
+        const tableBody = document.querySelector('#customersTable tbody');
+        tableBody.innerHTML = '';
+        
+        if (customers.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">لا يوجد عملاء</td></tr>';
+            return;
+        }
+        
+        customers.forEach(customer => {
+            const row = document.createElement('tr');
+            
+            // تنسيق التاريخ
+            const createdDate = new Date(customer.created_at);
+            const formattedDate = createdDate.toLocaleDateString('ar-EG');
+            
+            row.innerHTML = `
+                <td>${customer.name}</td>
+                <td>${customer.phone}</td>
+                <td>${customer.email || '-'}</td>
+                <td>${customer.address || '-'}</td>
+                <td>${formattedDate}</td>
+                <td class="customer-actions">
+                    <button class="btn btn-sm btn-info" onclick="viewCustomer(${customer.id})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="editCustomer(${customer.id})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${customer.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // دالة جلب إحصائيات العملاء
+    function fetchCustomerStats() {
+        // هنا سيتم استدعاء API لجلب إحصائيات العملاء
+        fetch('/api/customers')
+            .then(response => response.json())
+            .then(data => {
+                const customers = data.customers;
+                
+                // إجمالي العملاء
+                document.getElementById('totalCustomers').textContent = customers.length;
+                
+                // عملاء جدد هذا الشهر
+                const currentDate = new Date();
+                const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                
+                const newCustomers = customers.filter(customer => {
+                    const customerDate = new Date(customer.created_at);
+                    return customerDate >= firstDayOfMonth;
+                });
+                
+                document.getElementById('newCustomersMonth').textContent = newCustomers.length;
+                
+                // عملاء نشطين (افتراضيًا)
+                document.getElementById('activeCustomers').textContent = Math.floor(customers.length * 0.7);
+                
+                // جلب أفضل العملاء (سيتم تنفيذه بشكل كامل عند ربط النظام)
+                displayTopCustomers(customers.slice(0, 5));
+            })
+            .catch(error => {
+                console.error('Error fetching customer stats:', error);
+            });
+    }
+    
+    // دالة عرض أفضل العملاء
+    function displayTopCustomers(customers) {
+        const tableBody = document.querySelector('#topCustomersTable tbody');
+        tableBody.innerHTML = '';
+        
+        if (customers.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="3" class="text-center">لا توجد بيانات</td></tr>';
+            return;
+        }
+        
+        // في الإصدار النهائي، سيتم جلب هذه البيانات من الخادم
+        customers.forEach((customer, index) => {
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${customer.name}</td>
+                <td>${Math.floor(Math.random() * 10) + 1}</td>
+                <td>${(Math.random() * 10000).toFixed(2)} ج.م</td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // دالة حفظ عميل جديد
+    function saveCustomer() {
+        const form = document.getElementById('addCustomerForm');
+        const formData = new FormData(form);
+        const customerData = {};
+        
+        formData.forEach((value, key) => {
+            customerData[key] = value;
+        });
+        
+        // هنا سيتم استدعاء API لإضافة عميل جديد
+        fetch('/api/customers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(customerData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'فشل في إضافة العميل');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('تم إضافة العميل بنجاح');
+            form.reset();
+            $('#addCustomerModal').modal('hide');
+            fetchCustomers();
+            fetchCustomerStats();
+        })
+        .catch(error => {
+            console.error('Error adding customer:', error);
+            alert(error.message || 'حدث خطأ أثناء إضافة العميل');
+        });
+    }
+    
+    // دالة عرض تفاصيل العميل
+    function viewCustomer(customerId) {
+        fetch(`/api/customers/${customerId}`)
+            .then(response => response.json())
+            .then(customer => {
+                const detailsContainer = document.getElementById('customerDetails');
+                const statsContainer = document.getElementById('customerStats');
+                
+                // تنسيق التاريخ
+                const createdDate = new Date(customer.created_at);
+                const formattedDate = createdDate.toLocaleDateString('ar-EG');
+                
+                // عرض تفاصيل العميل
+                detailsContainer.innerHTML = `
+                    <h4>${customer.name}</h4>
+                    <p><i class="bi bi-telephone"></i> ${customer.phone}</p>
+                    <p><i class="bi bi-envelope"></i> ${customer.email || 'لا يوجد بريد إلكتروني'}</p>
+                    <p><i class="bi bi-geo-alt"></i> ${customer.address || 'لا يوجد عنوان'}</p>
+                    <p><i class="bi bi-calendar"></i> تاريخ الإضافة: ${formattedDate}</p>
+                `;
+                
+                // عرض إحصائيات العميل (بيانات افتراضية)
+                statsContainer.innerHTML = `
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">إحصائيات العميل</h5>
+                            <div class="row text-center">
+                                <div class="col-md-6 mb-3">
+                                    <h6>${Math.floor(Math.random() * 10) + 1}</h6>
+                                    <small>عدد المشتريات</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6>${(Math.random() * 10000).toFixed(2)} ج.م</h6>
+                                    <small>إجمالي المشتريات</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6>${(Math.random() * 1000).toFixed(2)} ج.م</h6>
+                                    <small>متوسط قيمة الطلب</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <h6>${Math.floor(Math.random() * 30) + 1} يوم</h6>
+                                    <small>آخر طلب منذ</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // عرض آخر المبيعات (بيانات افتراضية)
+                const salesTableBody = document.querySelector('#customerSalesTable tbody');
+                salesTableBody.innerHTML = '';
+                
+                // إنشاء بيانات افتراضية للمبيعات
+                const salesCount = Math.floor(Math.random() * 5) + 1;
+                
+                if (salesCount === 0) {
+                    salesTableBody.innerHTML = '<tr><td colspan="4" class="text-center">لا توجد مبيعات</td></tr>';
+                } else {
+                    for (let i = 0; i < salesCount; i++) {
+                        const row = document.createElement('tr');
+                        
+                        // إنشاء تاريخ عشوائي خلال الأشهر الثلاثة الماضية
+                        const saleDate = new Date();
+                        saleDate.setDate(saleDate.getDate() - Math.floor(Math.random() * 90));
+                        const formattedSaleDate = saleDate.toLocaleDateString('ar-EG');
+                        
+                        // إنشاء رقم فاتورة عشوائي
+                        const invoiceNumber = `INV-${Math.floor(Math.random() * 10000)}`;
+                        
+                        // إنشاء مبلغ عشوائي
+                        const amount = (Math.random() * 2000 + 100).toFixed(2);
+                        
+                        // إنشاء حالة دفع عشوائية
+                        const paymentStatus = ['مدفوع', 'مدفوع جزئيًا', 'غير مدفوع'][Math.floor(Math.random() * 3)];
+                        let statusClass = '';
+                        
+                        if (paymentStatus === 'مدفوع') {
+                            statusClass = 'text-success';
+                        } else if (paymentStatus === 'مدفوع جزئيًا') {
+                            statusClass = 'text-warning';
+                        } else {
+                            statusClass = 'text-danger';
+                        }
+                        
+                        row.innerHTML = `
+                            <td>${invoiceNumber}</td>
+                            <td>${formattedSaleDate}</td>
+                            <td>${amount} ج.م</td>
+                            <td class="${statusClass}">${paymentStatus}</td>
+                        `;
+                        
+                        salesTableBody.appendChild(row);
+                    }
+                }
+                
+                // تخزين معرف العميل في النافذة المنبثقة
+                document.getElementById('viewCustomerModal').dataset.customerId = customer.id;
+                
+                $('#viewCustomerModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error fetching customer details:', error);
+                alert('حدث خطأ أثناء جلب تفاصيل العميل');
+            });
+    }
+    
+    // دالة تحميل بيانات العميل للتعديل
+    function editCustomer(customerId) {
+        fetch(`/api/customers/${customerId}`)
+            .then(response => response.json())
+            .then(customer => {
+                document.getElementById('editCustomerId').value = customer.id;
+                document.getElementById('editCustomerName').value = customer.name;
+                document.getElementById('editCustomerPhone').value = customer.phone;
+                document.getElementById('editCustomerEmail').value = customer.email || '';
+                document.getElementById('editCustomerAddress').value = customer.address || '';
+                
+                $('#editCustomerModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error fetching customer for edit:', error);
+                alert('حدث خطأ أثناء جلب بيانات العميل');
+            });
+    }
+    
+    // دالة تحديث بيانات العميل
+    function updateCustomer() {
+        const form = document.getElementById('editCustomerForm');
+        const formData = new FormData(form);
+        const customerData = {};
+        const customerId = document.getElementById('editCustomerId').value;
+        
+        formData.forEach((value, key) => {
+            if (key !== 'id') {
+                customerData[key] = value;
+            }
+        });
+        
+        // هنا سيتم استدعاء API لتحديث بيانات العميل
+        fetch(`/api/customers/${customerId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(customerData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'فشل في تحديث بيانات العميل');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('تم تحديث بيانات العميل بنجاح');
+            $('#editCustomerModal').modal('hide');
+            fetchCustomers();
+        })
+        .catch(error => {
+            console.error('Error updating customer:', error);
+            alert(error.message || 'حدث خطأ أثناء تحديث بيانات العميل');
+        });
+    }
+    
+    // دالة حذف العميل
+    function deleteCustomer(customerId) {
+        if (confirm('هل أنت متأكد من حذف هذا العميل؟')) {
+            // هنا سيتم استدعاء API لحذف العميل
+            fetch(`/api/customers/${customerId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'فشل في حذف العميل');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('تم حذف العميل بنجاح');
+                fetchCustomers();
+                fetchCustomerStats();
+            })
+            .catch(error => {
+                console.error('Error deleting customer:', error);
+                alert(error.message || 'حدث خطأ أثناء حذف العميل');
+            });
+        }
+    }
+</script>
+{% endblock %}

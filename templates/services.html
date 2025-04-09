@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}الخدمات{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">إدارة الخدمات</h1>
+        <a href="{{ url_for('services.add') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> إضافة خدمة جديدة
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">قائمة الخدمات</h6>
+            <a href="{{ url_for('services.providers') }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-people"></i> مقدمي الخدمات
+            </a>
+        </div>
+        <div class="card-body">
+            {% if services %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>الكود</th>
+                            <th>اسم الخدمة</th>
+                            <th>نوع الخدمة</th>
+                            <th>المدة (دقيقة)</th>
+                            <th>السعر</th>
+                            <th>الفئة</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for service in services %}
+                        <tr>
+                            <td>{{ service.service_code }}</td>
+                            <td>{{ service.name }}</td>
+                            <td>{{ service.service_type }}</td>
+                            <td>{{ service.duration }}</td>
+                            <td>{{ service.price }}</td>
+                            <td>{{ service.category }}</td>
+                            <td>
+                                {% if service.is_active %}
+                                <span class="badge bg-success">نشط</span>
+                                {% else %}
+                                <span class="badge bg-danger">غير نشط</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('services.view', id=service.id) }}" class="btn btn-info btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('services.edit', id=service.id) }}" class="btn btn-warning btn-sm">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ service.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Delete Modal -->
+                                <div class="modal fade" id="deleteModal{{ service.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ service.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ service.id }}">تأكيد الحذف</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                هل أنت متأكد من حذف الخدمة: {{ service.name }}؟
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                                <form action="{{ url_for('services.delete', id=service.id) }}" method="post">
+                                                    <button type="submit" class="btn btn-danger">حذف</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                لا توجد خدمات مسجلة. <a href="{{ url_for('services.add') }}">أضف خدمة جديدة</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Arabic.json"
+            }
+        });
+    });
+</script>
+{% endblock %}

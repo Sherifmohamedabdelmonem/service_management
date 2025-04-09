@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}إضافة خدمة جديدة{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">إضافة خدمة جديدة</h1>
+        <a href="{{ url_for('services.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-right"></i> العودة إلى قائمة الخدمات
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">بيانات الخدمة</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('services.add') }}">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">اسم الخدمة <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="service_code" class="form-label">كود الخدمة <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="service_code" name="service_code" required>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="service_type" class="form-label">نوع الخدمة <span class="text-danger">*</span></label>
+                        <select class="form-select" id="service_type" name="service_type" required>
+                            <option value="">اختر نوع الخدمة</option>
+                            <option value="استشارة">استشارة</option>
+                            <option value="صيانة">صيانة</option>
+                            <option value="تركيب">تركيب</option>
+                            <option value="تدريب">تدريب</option>
+                            <option value="تصميم">تصميم</option>
+                            <option value="برمجة">برمجة</option>
+                            <option value="أخرى">أخرى</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="category" class="form-label">الفئة <span class="text-danger">*</span></label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="">اختر الفئة</option>
+                            <option value="تقنية المعلومات">تقنية المعلومات</option>
+                            <option value="استشارات إدارية">استشارات إدارية</option>
+                            <option value="خدمات مالية">خدمات مالية</option>
+                            <option value="خدمات قانونية">خدمات قانونية</option>
+                            <option value="خدمات تسويقية">خدمات تسويقية</option>
+                            <option value="خدمات تعليمية">خدمات تعليمية</option>
+                            <option value="أخرى">أخرى</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="price" class="form-label">سعر الخدمة <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+                            <span class="input-group-text">ج.م</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="duration" class="form-label">مدة الخدمة (بالدقائق)</label>
+                        <input type="number" class="form-control" id="duration" name="duration" min="1" value="60">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">وصف الخدمة</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                    <label class="form-check-label" for="is_active">الخدمة نشطة</label>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="reset" class="btn btn-secondary me-md-2">إعادة تعيين</button>
+                    <button type="submit" class="btn btn-primary">حفظ الخدمة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

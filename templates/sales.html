@@ -1,0 +1,975 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة المبيعات - نظام إدارة الأعمال{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sale-actions .btn {
+        margin-right: 5px;
+    }
+    .status-paid {
+        color: #198754;
+    }
+    .status-partial {
+        color: #fd7e14;
+    }
+    .status-unpaid {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>إدارة المبيعات</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSaleModal">
+            <i class="bi bi-plus-lg"></i> إضافة عملية بيع جديدة
+        </button>
+    </div>
+    
+    <!-- بحث وتصفية -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" id="searchSale" class="form-control" placeholder="رقم الفاتورة أو اسم العميل...">
+                        <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                            <i class="bi bi-search"></i> بحث
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="paymentStatusFilter" class="form-select">
+                        <option value="">جميع حالات الدفع</option>
+                        <option value="paid">مدفوع</option>
+                        <option value="partial">مدفوع جزئيًا</option>
+                        <option value="unpaid">غير مدفوع</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input type="date" id="startDate" class="form-control" placeholder="من تاريخ">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="date" id="endDate" class="form-control" placeholder="إلى تاريخ">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول المبيعات -->
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-cart-check"></i> قائمة المبيعات
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="salesTable">
+                    <thead>
+                        <tr>
+                            <th>رقم الفاتورة</th>
+                            <th>العميل</th>
+                            <th>التاريخ</th>
+                            <th>المبلغ الإجمالي</th>
+                            <th>الخصم</th>
+                            <th>المبلغ النهائي</th>
+                            <th>طريقة الدفع</th>
+                            <th>حالة الدفع</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- سيتم ملء هذا الجدول بالبيانات عبر JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="salesPagination" class="d-flex justify-content-center mt-3">
+                <!-- سيتم إنشاء أزرار التنقل بين الصفحات هنا -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة عملية بيع جديدة -->
+<div class="modal fade" id="addSaleModal" tabindex="-1" aria-labelledby="addSaleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSaleModalLabel">إضافة عملية بيع جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addSaleForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="saleCustomer" class="form-label">العميل</label>
+                            <select class="form-select" id="saleCustomer" name="customer_id">
+                                <option value="">عميل غير مسجل</option>
+                                <!-- سيتم ملء هذه القائمة بالعملاء المتاحين عبر JavaScript -->
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="saleDate" class="form-label">تاريخ البيع</label>
+                            <input type="datetime-local" class="form-control" id="saleDate" name="sale_date">
+                        </div>
+                    </div>
+                    
+                    <h6 class="mt-4 mb-3">عناصر البيع</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="saleItemsTable">
+                            <thead>
+                                <tr>
+                                    <th>المنتج</th>
+                                    <th>الكمية</th>
+                                    <th>سعر الوحدة</th>
+                                    <th>الخصم</th>
+                                    <th>الإجمالي</th>
+                                    <th>إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr id="saleItemRow0">
+                                    <td>
+                                        <select class="form-select product-select" name="items[0][product_id]" required>
+                                            <option value="">اختر منتج</option>
+                                            <!-- سيتم ملء هذه القائمة بالمنتجات المتاحة عبر JavaScript -->
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control item-quantity" name="items[0][quantity]" value="1" min="1" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control item-price" name="items[0][unit_price]" step="0.01" required readonly>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control item-discount" name="items[0][discount]" value="0" min="0" step="0.01">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control item-total" name="items[0][total_price]" step="0.01" readonly>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm remove-item" disabled>
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-success btn-sm" id="addItemBtn">
+                        <i class="bi bi-plus-lg"></i> إضافة عنصر
+                    </button>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="saleNotes" class="form-label">ملاحظات</label>
+                                <textarea class="form-control" id="saleNotes" name="notes" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="salePaymentMethod" class="form-label">طريقة الدفع</label>
+                                <select class="form-select" id="salePaymentMethod" name="payment_method">
+                                    <option value="cash">نقدًا</option>
+                                    <option value="card">بطاقة ائتمان</option>
+                                    <option value="transfer">تحويل بنكي</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="salePaymentStatus" class="form-label">حالة الدفع</label>
+                                <select class="form-select" id="salePaymentStatus" name="payment_status">
+                                    <option value="paid">مدفوع</option>
+                                    <option value="partial">مدفوع جزئيًا</option>
+                                    <option value="unpaid">غير مدفوع</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    ملخص الفاتورة
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>إجمالي المبلغ:</span>
+                                        <span id="saleTotalAmount">0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <span>الخصم:</span>
+                                            <input type="number" class="form-control form-control-sm ms-2" id="saleDiscount" name="discount" value="0" min="0" step="0.01" style="width: 100px;">
+                                        </div>
+                                        <span id="saleDiscountAmount">0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <span>الضريبة (%):</span>
+                                            <input type="number" class="form-control form-control-sm ms-2" id="saleTax" name="tax" value="0" min="0" step="0.01" style="width: 100px;">
+                                        </div>
+                                        <span id="saleTaxAmount">0.00</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>المبلغ النهائي:</strong>
+                                        <strong id="saleFinalAmount">0.00</strong>
+                                        <input type="hidden" name="final_amount" id="saleFinalAmountInput">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="saveSaleBtn">حفظ عملية البيع</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تفاصيل عملية البيع -->
+<div class="modal fade" id="viewSaleModal" tabindex="-1" aria-labelledby="viewSaleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewSaleModalLabel">تفاصيل عملية البيع</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body" id="viewSaleDetails">
+                <!-- سيتم ملء هذا القسم بتفاصيل عملية البيع عبر JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary" id="printSaleBtn">طباعة الفاتورة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal إضافة دفعة -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPaymentModalLabel">إضافة دفعة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPaymentForm">
+                    <input type="hidden" id="paymentSaleId" name="sale_id">
+                    <div class="mb-3">
+                        <label for="paymentAmount" class="form-label">المبلغ</label>
+                        <input type="number" class="form-control" id="paymentAmount" name="amount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="paymentMethod" class="form-label">طريقة الدفع</label>
+                        <select class="form-select" id="paymentMethod" name="payment_method">
+                            <option value="cash">نقدًا</option>
+                            <option value="card">بطاقة ائتمان</option>
+                            <option value="transfer">تحويل بنكي</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="paymentReference" class="form-label">المرجع</label>
+                        <input type="text" class="form-control" id="paymentReference" name="reference">
+                    </div>
+                    <div class="mb-3">
+                        <label for="paymentNotes" class="form-label">ملاحظات</label>
+                        <textarea class="form-control" id="paymentNotes" name="notes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="savePaymentBtn">حفظ الدفعة</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // سيتم إضافة كود JavaScript لإدارة المبيعات هنا
+    document.addEventListener('DOMContentLoaded', function() {
+        // تعيين التاريخ الحالي
+        document.getElementById('saleDate').value = new Date().toISOString().slice(0, 16);
+        
+        // جلب المبيعات عند تحميل الصفحة
+        fetchSales();
+        
+        // جلب العملاء والمنتجات
+        fetchCustomers();
+        fetchProducts();
+        
+        // أحداث النموذج
+        setupFormEvents();
+        
+        // حدث حفظ عملية بيع جديدة
+        document.getElementById('saveSaleBtn').addEventListener('click', function() {
+            saveSale();
+        });
+        
+        // حدث البحث
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            fetchSales();
+        });
+        
+        // حدث تغيير حالة الدفع
+        document.getElementById('paymentStatusFilter').addEventListener('change', function() {
+            fetchSales();
+        });
+        
+        // حدث تغيير التاريخ
+        document.getElementById('startDate').addEventListener('change', function() {
+            fetchSales();
+        });
+        document.getElementById('endDate').addEventListener('change', function() {
+            fetchSales();
+        });
+        
+        // حدث حفظ دفعة جديدة
+        document.getElementById('savePaymentBtn').addEventListener('click', function() {
+            savePayment();
+        });
+        
+        // حدث طباعة الفاتورة
+        document.getElementById('printSaleBtn').addEventListener('click', function() {
+            printInvoice();
+        });
+    });
+    
+    // دالة إعداد أحداث النموذج
+    function setupFormEvents() {
+        // إضافة عنصر جديد
+        document.getElementById('addItemBtn').addEventListener('click', function() {
+            addSaleItem();
+        });
+        
+        // حساب المبلغ النهائي عند تغيير الخصم أو الضريبة
+        document.getElementById('saleDiscount').addEventListener('input', calculateFinalAmount);
+        document.getElementById('saleTax').addEventListener('input', calculateFinalAmount);
+    }
+    
+    // دالة جلب المبيعات
+    function fetchSales() {
+        const searchTerm = document.getElementById('searchSale').value;
+        const paymentStatus = document.getElementById('paymentStatusFilter').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        // هنا سيتم استدعاء API لجلب المبيعات
+        fetch('/api/sales')
+            .then(response => response.json())
+            .then(data => {
+                displaySales(data.sales);
+            })
+            .catch(error => {
+                console.error('Error fetching sales:', error);
+                alert('حدث خطأ أثناء جلب المبيعات');
+            });
+    }
+    
+    // دالة عرض المبيعات في الجدول
+    function displaySales(sales) {
+        const tableBody = document.querySelector('#salesTable tbody');
+        tableBody.innerHTML = '';
+        
+        if (sales.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="9" class="text-center">لا توجد مبيعات</td></tr>';
+            return;
+        }
+        
+        sales.forEach(sale => {
+            const row = document.createElement('tr');
+            
+            // تحديد حالة الدفع
+            let paymentStatusText = '';
+            let paymentStatusClass = '';
+            
+            if (sale.payment_status === 'paid') {
+                paymentStatusText = 'مدفوع';
+                paymentStatusClass = 'status-paid';
+            } else if (sale.payment_status === 'partial') {
+                paymentStatusText = 'مدفوع جزئيًا';
+                paymentStatusClass = 'status-partial';
+            } else {
+                paymentStatusText = 'غير مدفوع';
+                paymentStatusClass = 'status-unpaid';
+            }
+            
+            // تحديد طريقة الدفع
+            let paymentMethodText = '';
+            
+            if (sale.payment_method === 'cash') {
+                paymentMethodText = 'نقدًا';
+            } else if (sale.payment_method === 'card') {
+                paymentMethodText = 'بطاقة ائتمان';
+            } else if (sale.payment_method === 'transfer') {
+                paymentMethodText = 'تحويل بنكي';
+            }
+            
+            // تنسيق التاريخ
+            const saleDate = new Date(sale.sale_date);
+            const formattedDate = saleDate.toLocaleDateString('ar-EG') + ' ' + saleDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            
+            row.innerHTML = `
+                <td>${sale.invoice_number}</td>
+                <td>${sale.customer_name}</td>
+                <td>${formattedDate}</td>
+                <td>${sale.total_amount.toFixed(2)}</td>
+                <td>${sale.discount.toFixed(2)}</td>
+                <td>${sale.final_amount.toFixed(2)}</td>
+                <td>${paymentMethodText}</td>
+                <td class="${paymentStatusClass}">${paymentStatusText}</td>
+                <td class="sale-actions">
+                    <button class="btn btn-sm btn-info" onclick="viewSale(${sale.id})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    ${sale.payment_status !== 'paid' ? `
+                    <button class="btn btn-sm btn-success" onclick="addPayment(${sale.id})">
+                        <i class="bi bi-cash"></i>
+                    </button>
+                    ` : ''}
+                    <button class="btn btn-sm btn-danger" onclick="deleteSale(${sale.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // دالة جلب العملاء
+    function fetchCustomers() {
+        fetch('/api/customers')
+            .then(response => response.json())
+            .then(data => {
+                const customerSelect = document.getElementById('saleCustomer');
+                
+                data.customers.forEach(customer => {
+                    const option = document.createElement('option');
+                    option.value = customer.id;
+                    option.textContent = customer.name;
+                    customerSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching customers:', error);
+            });
+    }
+    
+    // دالة جلب المنتجات
+    function fetchProducts() {
+        fetch('/api/products')
+            .then(response => response.json())
+            .then(data => {
+                window.productsData = data.products;
+                updateProductSelects();
+            })
+            .catch(error => {
+                console.error('Error fetching products:', error);
+            });
+    }
+    
+    // دالة تحديث قوائم المنتجات
+    function updateProductSelects() {
+        const productSelects = document.querySelectorAll('.product-select');
+        
+        productSelects.forEach(select => {
+            // الاحتفاظ بالقيمة المحددة حاليًا
+            const currentValue = select.value;
+            
+            // حذف جميع الخيارات باستثناء الخيار الافتراضي
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            
+            // إضافة المنتجات
+            window.productsData.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = `${product.name} (المخزون: ${product.current_stock})`;
+                option.dataset.price = product.selling_price;
+                option.dataset.stock = product.current_stock;
+                select.appendChild(option);
+            });
+            
+            // استعادة القيمة المحددة إذا كانت موجودة
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        });
+    }
+    
+    // دالة إضافة عنصر بيع جديد
+    function addSaleItem() {
+        const itemsTable = document.getElementById('saleItemsTable').getElementsByTagName('tbody')[0];
+        const rowCount = itemsTable.rows.length;
+        const newRow = itemsTable.insertRow();
+        
+        newRow.id = `saleItemRow${rowCount}`;
+        newRow.innerHTML = `
+            <td>
+                <select class="form-select product-select" name="items[${rowCount}][product_id]" required>
+                    <option value="">اختر منتج</option>
+                </select>
+            </td>
+            <td>
+                <input type="number" class="form-control item-quantity" name="items[${rowCount}][quantity]" value="1" min="1" required>
+            </td>
+            <td>
+                <input type="number" class="form-control item-price" name="items[${rowCount}][unit_price]" step="0.01" required readonly>
+            </td>
+            <td>
+                <input type="number" class="form-control item-discount" name="items[${rowCount}][discount]" value="0" min="0" step="0.01">
+            </td>
+            <td>
+                <input type="number" class="form-control item-total" name="items[${rowCount}][total_price]" step="0.01" readonly>
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm remove-item">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        // تحديث قوائم المنتجات
+        updateProductSelects();
+        
+        // إضافة أحداث للعناصر الجديدة
+        const newSelect = newRow.querySelector('.product-select');
+        const newQuantity = newRow.querySelector('.item-quantity');
+        const newDiscount = newRow.querySelector('.item-discount');
+        const removeButton = newRow.querySelector('.remove-item');
+        
+        newSelect.addEventListener('change', function() {
+            updateItemPrice(this);
+            calculateItemTotal(newRow);
+            calculateFinalAmount();
+        });
+        
+        newQuantity.addEventListener('input', function() {
+            calculateItemTotal(newRow);
+            calculateFinalAmount();
+        });
+        
+        newDiscount.addEventListener('input', function() {
+            calculateItemTotal(newRow);
+            calculateFinalAmount();
+        });
+        
+        removeButton.addEventListener('click', function() {
+            itemsTable.removeChild(newRow);
+            calculateFinalAmount();
+        });
+    }
+    
+    // دالة تحديث سعر العنصر بناءً على المنتج المحدد
+    function updateItemPrice(select) {
+        const row = select.closest('tr');
+        const priceInput = row.querySelector('.item-price');
+        const quantityInput = row.querySelector('.item-quantity');
+        
+        if (select.value) {
+            const option = select.options[select.selectedIndex];
+            const price = parseFloat(option.dataset.price);
+            const stock = parseInt(option.dataset.stock);
+            
+            priceInput.value = price.toFixed(2);
+            
+            // التحقق من المخزون المتاح
+            if (stock < parseInt(quantityInput.value)) {
+                quantityInput.value = stock;
+                alert(`المخزون المتاح لهذا المنتج هو ${stock} فقط`);
+            }
+            
+            // تعيين الحد الأقصى للكمية
+            quantityInput.max = stock;
+        } else {
+            priceInput.value = '';
+        }
+    }
+    
+    // دالة حساب إجمالي العنصر
+    function calculateItemTotal(row) {
+        const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+        const price = parseFloat(row.querySelector('.item-price').value) || 0;
+        const discount = parseFloat(row.querySelector('.item-discount').value) || 0;
+        
+        const total = (quantity * price) - discount;
+        row.querySelector('.item-total').value = total.toFixed(2);
+    }
+    
+    // دالة حساب المبلغ النهائي
+    function calculateFinalAmount() {
+        const itemTotals = document.querySelectorAll('.item-total');
+        let totalAmount = 0;
+        
+        itemTotals.forEach(item => {
+            totalAmount += parseFloat(item.value) || 0;
+        });
+        
+        const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
+        const taxPercent = parseFloat(document.getElementById('saleTax').value) || 0;
+        
+        const taxAmount = (totalAmount * taxPercent) / 100;
+        const finalAmount = totalAmount - discount + taxAmount;
+        
+        document.getElementById('saleTotalAmount').textContent = totalAmount.toFixed(2);
+        document.getElementById('saleDiscountAmount').textContent = discount.toFixed(2);
+        document.getElementById('saleTaxAmount').textContent = taxAmount.toFixed(2);
+        document.getElementById('saleFinalAmount').textContent = finalAmount.toFixed(2);
+        document.getElementById('saleFinalAmountInput').value = finalAmount.toFixed(2);
+    }
+    
+    // دالة حفظ عملية بيع جديدة
+    function saveSale() {
+        const form = document.getElementById('addSaleForm');
+        const formData = new FormData(form);
+        const saleData = {
+            items: []
+        };
+        
+        // التحقق من وجود عناصر بيع
+        const productSelects = form.querySelectorAll('.product-select');
+        if (productSelects.length === 0 || !productSelects[0].value) {
+            alert('يجب إضافة منتج واحد على الأقل');
+            return;
+        }
+        
+        // تجميع بيانات النموذج
+        for (const [key, value] of formData.entries()) {
+            if (key.startsWith('items[')) {
+                const matches = key.match(/items\[(\d+)\]\[(\w+)\]/);
+                if (matches) {
+                    const index = parseInt(matches[1]);
+                    const field = matches[2];
+                    
+                    if (!saleData.items[index]) {
+                        saleData.items[index] = {};
+                    }
+                    
+                    if (field === 'product_id' || field === 'quantity') {
+                        saleData.items[index][field] = parseInt(value);
+                    } else {
+                        saleData.items[index][field] = parseFloat(value);
+                    }
+                }
+            } else if (key === 'customer_id') {
+                if (value) {
+                    saleData[key] = parseInt(value);
+                }
+            } else if (key === 'discount' || key === 'tax' || key === 'final_amount') {
+                saleData[key] = parseFloat(value);
+            } else {
+                saleData[key] = value;
+            }
+        }
+        
+        // تنظيف مصفوفة العناصر (تحويلها من كائن إلى مصفوفة)
+        saleData.items = Object.values(saleData.items);
+        
+        // حساب إجمالي المبلغ
+        saleData.total_amount = saleData.items.reduce((total, item) => total + item.total_price, 0);
+        
+        // هنا سيتم استدعاء API لإضافة عملية بيع جديدة
+        fetch('/api/sales', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(saleData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'فشل في إضافة عملية البيع');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('تم إضافة عملية البيع بنجاح');
+            form.reset();
+            $('#addSaleModal').modal('hide');
+            fetchSales();
+        })
+        .catch(error => {
+            console.error('Error adding sale:', error);
+            alert(error.message || 'حدث خطأ أثناء إضافة عملية البيع');
+        });
+    }
+    
+    // دالة عرض تفاصيل عملية البيع
+    function viewSale(saleId) {
+        fetch(`/api/sales/${saleId}`)
+            .then(response => response.json())
+            .then(sale => {
+                const detailsContainer = document.getElementById('viewSaleDetails');
+                
+                // تحديد حالة الدفع
+                let paymentStatusText = '';
+                let paymentStatusClass = '';
+                
+                if (sale.payment_status === 'paid') {
+                    paymentStatusText = 'مدفوع';
+                    paymentStatusClass = 'text-success';
+                } else if (sale.payment_status === 'partial') {
+                    paymentStatusText = 'مدفوع جزئيًا';
+                    paymentStatusClass = 'text-warning';
+                } else {
+                    paymentStatusText = 'غير مدفوع';
+                    paymentStatusClass = 'text-danger';
+                }
+                
+                // تحديد طريقة الدفع
+                let paymentMethodText = '';
+                
+                if (sale.payment_method === 'cash') {
+                    paymentMethodText = 'نقدًا';
+                } else if (sale.payment_method === 'card') {
+                    paymentMethodText = 'بطاقة ائتمان';
+                } else if (sale.payment_method === 'transfer') {
+                    paymentMethodText = 'تحويل بنكي';
+                }
+                
+                // تنسيق التاريخ
+                const saleDate = new Date(sale.sale_date);
+                const formattedDate = saleDate.toLocaleDateString('ar-EG') + ' ' + saleDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                
+                // إنشاء HTML لعناصر البيع
+                let itemsHtml = '';
+                
+                if (sale.items && sale.items.length > 0) {
+                    itemsHtml = `
+                        <div class="table-responsive mt-3">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>المنتج</th>
+                                        <th>الكمية</th>
+                                        <th>سعر الوحدة</th>
+                                        <th>الخصم</th>
+                                        <th>الإجمالي</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    sale.items.forEach(item => {
+                        itemsHtml += `
+                            <tr>
+                                <td>${item.product_name}</td>
+                                <td>${item.quantity}</td>
+                                <td>${item.unit_price.toFixed(2)}</td>
+                                <td>${item.discount.toFixed(2)}</td>
+                                <td>${item.total_price.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    itemsHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                
+                // إنشاء HTML للمدفوعات
+                let paymentsHtml = '';
+                
+                if (sale.payments && sale.payments.length > 0) {
+                    paymentsHtml = `
+                        <h6 class="mt-4">المدفوعات</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>التاريخ</th>
+                                        <th>المبلغ</th>
+                                        <th>طريقة الدفع</th>
+                                        <th>المرجع</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    sale.payments.forEach(payment => {
+                        // تحديد طريقة الدفع
+                        let paymentMethodText = '';
+                        
+                        if (payment.payment_method === 'cash') {
+                            paymentMethodText = 'نقدًا';
+                        } else if (payment.payment_method === 'card') {
+                            paymentMethodText = 'بطاقة ائتمان';
+                        } else if (payment.payment_method === 'transfer') {
+                            paymentMethodText = 'تحويل بنكي';
+                        }
+                        
+                        // تنسيق التاريخ
+                        const paymentDate = new Date(payment.payment_date);
+                        const formattedPaymentDate = paymentDate.toLocaleDateString('ar-EG') + ' ' + paymentDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                        
+                        paymentsHtml += `
+                            <tr>
+                                <td>${formattedPaymentDate}</td>
+                                <td>${payment.amount.toFixed(2)}</td>
+                                <td>${paymentMethodText}</td>
+                                <td>${payment.reference || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    paymentsHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                
+                detailsContainer.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>معلومات الفاتورة</h5>
+                            <p><strong>رقم الفاتورة:</strong> ${sale.invoice_number}</p>
+                            <p><strong>التاريخ:</strong> ${formattedDate}</p>
+                            <p><strong>العميل:</strong> ${sale.customer_name}</p>
+                            <p><strong>البائع:</strong> ${sale.seller_name}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>معلومات الدفع</h5>
+                            <p><strong>إجمالي المبلغ:</strong> ${sale.total_amount.toFixed(2)}</p>
+                            <p><strong>الخصم:</strong> ${sale.discount.toFixed(2)}</p>
+                            <p><strong>الضريبة:</strong> ${sale.tax.toFixed(2)}</p>
+                            <p><strong>المبلغ النهائي:</strong> ${sale.final_amount.toFixed(2)}</p>
+                            <p><strong>طريقة الدفع:</strong> ${paymentMethodText}</p>
+                            <p><strong>حالة الدفع:</strong> <span class="${paymentStatusClass}">${paymentStatusText}</span></p>
+                        </div>
+                    </div>
+                    
+                    <h6 class="mt-4">عناصر البيع</h6>
+                    ${itemsHtml}
+                    
+                    ${paymentsHtml}
+                    
+                    ${sale.notes ? `
+                    <div class="mt-4">
+                        <h6>ملاحظات</h6>
+                        <p>${sale.notes}</p>
+                    </div>
+                    ` : ''}
+                `;
+                
+                $('#viewSaleModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error fetching sale details:', error);
+                alert('حدث خطأ أثناء جلب تفاصيل عملية البيع');
+            });
+    }
+    
+    // دالة إضافة دفعة
+    function addPayment(saleId) {
+        document.getElementById('paymentSaleId').value = saleId;
+        $('#addPaymentModal').modal('show');
+    }
+    
+    // دالة حفظ دفعة جديدة
+    function savePayment() {
+        const form = document.getElementById('addPaymentForm');
+        const formData = new FormData(form);
+        const paymentData = {};
+        const saleId = document.getElementById('paymentSaleId').value;
+        
+        formData.forEach((value, key) => {
+            paymentData[key] = value;
+        });
+        
+        // تحويل القيم الرقمية
+        paymentData.amount = parseFloat(paymentData.amount);
+        
+        // هنا سيتم استدعاء API لإضافة دفعة جديدة
+        fetch(`/api/sales/${saleId}/payments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(paymentData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'فشل في إضافة الدفعة');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('تم إضافة الدفعة بنجاح');
+            form.reset();
+            $('#addPaymentModal').modal('hide');
+            fetchSales();
+        })
+        .catch(error => {
+            console.error('Error adding payment:', error);
+            alert(error.message || 'حدث خطأ أثناء إضافة الدفعة');
+        });
+    }
+    
+    // دالة حذف عملية البيع
+    function deleteSale(saleId) {
+        if (confirm('هل أنت متأكد من حذف عملية البيع هذه؟')) {
+            // هنا سيتم استدعاء API لحذف عملية البيع
+            fetch(`/api/sales/${saleId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'فشل في حذف عملية البيع');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('تم حذف عملية البيع بنجاح');
+                fetchSales();
+            })
+            .catch(error => {
+                console.error('Error deleting sale:', error);
+                alert(error.message || 'حدث خطأ أثناء حذف عملية البيع');
+            });
+        }
+    }
+    
+    // دالة طباعة الفاتورة
+    function printInvoice() {
+        const printContents = document.getElementById('viewSaleDetails').innerHTML;
+        const originalContents = document.body.innerHTML;
+        
+        document.body.innerHTML = `
+            <div class="container mt-4">
+                <div class="text-center mb-4">
+                    <h2>فاتورة مبيعات</h2>
+                </div>
+                ${printContents}
+            </div>
+        `;
+        
+        window.print();
+        document.body.innerHTML = originalContents;
+        
+        // إعادة تعيين أحداث الصفحة بعد الطباعة
+        document.addEventListener('DOMContentLoaded', function() {
+            setupFormEvents();
+        });
+    }
+</script>
+{% endblock %}

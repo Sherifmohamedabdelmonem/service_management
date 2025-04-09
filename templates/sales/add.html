@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+{% block title %}إضافة مبيعات خدمات جديدة{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">إضافة مبيعات خدمات جديدة</h1>
+        <a href="{{ url_for('sales.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-right"></i> العودة إلى قائمة المبيعات
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">بيانات المبيعات</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('sales.add') }}" id="salesForm">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="invoice_number" class="form-label">رقم الفاتورة</label>
+                        <input type="text" class="form-control" id="invoice_number" value="سيتم إنشاؤه تلقائيًا" disabled>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="sale_date" class="form-label">تاريخ البيع <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="sale_date" name="sale_date" value="{{ today }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="customer_id" class="form-label">العميل</label>
+                        <select class="form-select" id="customer_id" name="customer_id">
+                            <option value="">اختر العميل</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.id }}">{{ customer.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <hr>
+                <h5 class="mb-3">الخدمات</h5>
+
+                <div id="items-container">
+                    <div class="row mb-3 item-row">
+                        <div class="col-md-3">
+                            <label class="form-label">الخدمة <span class="text-danger">*</span></label>
+                            <select class="form-select service-select" name="service_id[]" required>
+                                <option value="">اختر الخدمة</option>
+                                {% for service in services %}
+                                <option value="{{ service.id }}" data-price="{{ service.price }}">{{ service.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">مقدم الخدمة</label>
+                            <select class="form-select" name="provider_id[]">
+                                <option value="">اختر مقدم الخدمة</option>
+                                {% for provider in providers %}
+                                <option value="{{ provider.id }}">{{ provider.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">موعد الخدمة</label>
+                            <input type="datetime-local" class="form-control" name="scheduled_date[]">
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">الكمية <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control quantity" name="quantity[]" min="1" value="1" required>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">السعر <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control unit-price" name="unit_price[]" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">الخصم</label>
+                            <input type="number" class="form-control item-discount" name="item_discount[]" step="0.01" min="0" value="0">
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">الإجمالي</label>
+                            <input type="number" class="form-control total-price" name="total_price[]" step="0.01" min="0" readonly>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger remove-item mb-2" style="display: none;"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4">
+                    <button type="button" class="btn btn-success" id="add-item">
+                        <i class="bi bi-plus-circle"></i> إضافة خدمة
+                    </button>
+                </div>
+
+                <hr>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="total_amount" class="form-label">إجمالي المبلغ</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="total_amount" name="total_amount" step="0.01" min="0" readonly>
+                            <span class="input-group-text">ج.م</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="discount" class="form-label">الخصم الإجمالي</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="discount" name="discount" step="0.01" min="0" value="0">
+                            <span class="input-group-text">ج.م</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="tax" class="form-label">الضريبة</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="tax" name="tax" step="0.01" min="0" value="0">
+                            <span class="input-group-text">ج.م</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="final_amount" class="form-label">المبلغ النهائي</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="final_amount" name="final_amount" step="0.01" min="0" readonly>
+                            <span class="input-group-text">ج.م</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="payment_method" class="form-label">طريقة الدفع <span class="text-danger">*</span></label>
+                        <select class="form-select" id="payment_method" name="payment_method" required>
+                            <option value="cash">نقدًا</option>
+                            <option value="card">بطاقة ائتمان</option>
+                            <option value="transfer">تحويل بنكي</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="payment_status" class="form-label">حالة الدفع <span class="text-danger">*</span></label>
+                        <select class="form-select" id="payment_status" name="payment_status" required>
+                            <option value="paid">مدفوع</option>
+                            <option value="partial">مدفوع جزئيًا</option>
+                            <option value="unpaid">غير مدفوع</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="payment-details" class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="payment_amount" class="form-label">المبلغ المدفوع <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="payment_amount" name="payment_amount" step="0.01" min="0">
+                            <span class="input-group-text">ج.م</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="payment_date" class="form-label">تاريخ الدفع</label>
+                        <input type="date" class="form-control" id="payment_date" name="payment_date" value="{{ today }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="payment_reference" class="form-label">مرجع الدفع</label>
+                        <input type="text" class="form-control" id="payment_reference" name="payment_reference">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">ملاحظات</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="reset" class="btn btn-secondary me-md-2">إعادة تعيين</button>
+                    <button type="submit" class="btn btn-primary">حفظ المبيعات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // إضافة عنصر جديد
+        $('#add-item').click(function() {
+            var newItem = $('.item-row:first').clone();
+            newItem.find('input').val('');
+            newItem.find('select').val('');
+            newItem.find('.quantity').val(1);
+            newItem.find('.remove-item').show();
+            $('#items-container').append(newItem);
+            bindEvents();
+            calculateTotals();
+        });
+
+        // حذف عنصر
+        $(document).on('click', '.remove-item', function() {
+            if ($('.item-row').length > 1) {
+                $(this).closest('.item-row').remove();
+                calculateTotals();
+            }
+        });
+
+        // تحديث السعر عند اختيار الخدمة
+        function bindEvents() {
+            $('.service-select').off('change').on('change', function() {
+                var row = $(this).closest('.item-row');
+                var price = $(this).find(':selected').data('price') || 0;
+                row.find('.unit-price').val(price);
+                calculateRowTotal(row);
+            });
+
+            $('.quantity, .unit-price, .item-discount').off('input').on('input', function() {
+                calculateRowTotal($(this).closest('.item-row'));
+            });
+        }
+
+        // حساب إجمالي الصف
+        function calculateRowTotal(row) {
+            var quantity = parseFloat(row.find('.quantity').val()) || 0;
+            var unitPrice = parseFloat(row.find('.unit-price').val()) || 0;
+            var discount = parseFloat(row.find('.item-discount').val()) || 0;
+            var total = (quantity * unitPrice) - discount;
+            row.find('.total-price').val(total.toFixed(2));
+            calculateTotals();
+        }
+
+        // حساب الإجماليات
+        function calculateTotals() {
+            var totalAmount = 0;
+            $('.total-price').each(function() {
+                totalAmount += parseFloat($(this).val()) || 0;
+            });
+            
+            $('#total_amount').val(totalAmount.toFixed(2));
+            
+            var discount = parseFloat($('#discount').val()) || 0;
+            var tax = parseFloat($('#tax').val()) || 0;
+            var finalAmount = totalAmount - discount + tax;
+            
+            $('#final_amount').val(finalAmount.toFixed(2));
+            $('#payment_amount').val(finalAmount.toFixed(2));
+        }
+
+        // إظهار/إخفاء تفاصيل الدفع
+        $('#payment_status').change(function() {
+            if ($(this).val() === 'unpaid') {
+                $('#payment-details').hide();
+            } else {
+                $('#payment-details').show();
+                if ($(this).val() === 'paid') {
+                    $('#payment_amount').val($('#final_amount').val());
+                }
+            }
+        });
+
+        // تحديث المبلغ النهائي عند تغيير الخصم أو الضريبة
+        $('#discount, #tax').on('input', function() {
+            calculateTotals();
+        });
+
+        // تهيئة الأحداث
+        bindEvents();
+        calculateTotals();
+    });
+</script>
+{% endblock %}
